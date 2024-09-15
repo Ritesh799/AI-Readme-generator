@@ -28,6 +28,10 @@ git clone https://github.com/Ritesh799/AI-Readme-generator.git
 # Install the necessary packages 
 pip install -r requirements.txt
 ```
+```bash
+# Run Application 
+streamlit run src/app.py
+```
 
 ## Usage 📖
 
