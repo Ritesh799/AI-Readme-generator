@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 import google.generativeai as genai
-from github_scraper import GitHubScraper  # Assuming you have this module
+from github_scraper import GitHubScraper  
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
