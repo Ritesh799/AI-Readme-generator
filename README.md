@@ -1,3 +1,4 @@
+![image](https://github.com/user-attachments/assets/e3c730e1-ff5f-454d-96cd-be0d83059355)
 
 # AI-Readme-generator 🎨
 
