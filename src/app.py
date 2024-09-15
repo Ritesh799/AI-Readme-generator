@@ -6,98 +6,109 @@ from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
-# Configure Generative AI
-genai.configure(api_key=os.environ["API_KEY"])
-model = genai.GenerativeModel("gemini-1.5-flash")
+# Configure Google Gemini API key
+genai.configure(api_key=os.getenv("API_KEY"))
 
-def generate_readme(repo_url):
-    # Initialize GitHubScraper with your GitHub token
-    github_token = os.environ["GITHUB_API_TOKEN"]
-    github_scraper = GitHubScraper(github_token)
-    
-    # Fetch repository details
-    get_repo_details = github_scraper.get_repo_details(repo_url)
-    
-    # Extract repository information
-    repo_name = get_repo_details.get('name', 'Unknown Repo')
-    repo_description = get_repo_details.get('description', 'No description available.')
-    repo_url = get_repo_details.get('html_url', 'No URL available.')
+# App Title
+st.set_page_config(page_title="GitHub README Generator 📝✨", layout="wide")
+st.title("GitHub README Generator 📝✨")
 
-    # Create a prompt for the AI model
-    prompt = f"""
-    # {repo_name} 🎨
-    
-    ## Description 📜
-    {repo_description}
-    
-    ## Repository URL 🌐
-    [Link to Repository]({repo_url})
-    
-    ## Features 🚀
-    - Feature 1
-    - Feature 2
-    - Feature 3
-    
-    ## Installation 🛠️
-    ```bash
-    # Installation commands
-    ```
-    
-    ## Usage 📖
-    ```python
-    # Usage examples
-    ```
-    
-    ## Contributing 🤝
-    Contributions are welcome! Please refer to [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-    
-    ## License 📜
-    This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+# Sidebar input for GitHub repo URL
+st.sidebar.header("Enter the GitHub Repo URL")
+repo_url = st.sidebar.text_input("GitHub Repo URL", placeholder="https://github.com/user/repo")
+
+# Function to add Copy to Clipboard functionality using JS
+def add_copy_to_clipboard_js(content):
+    # Encode the content to be safely included in JS
+    encoded_content = content.replace("\n", "\\n").replace("'", "\\'")
+    copy_js = f"""
+    <script>
+        function copyToClipboard() {{
+            var text = `{encoded_content}`;
+            navigator.clipboard.writeText(text).then(function() {{
+                // Display success message
+                document.getElementById('copy-status').innerText = 'Copied to clipboard!';
+                document.getElementById('copy-status').style.color = 'green';
+            }}, function(err) {{
+                // Display error message
+                document.getElementById('copy-status').innerText = 'Failed to copy text: ' + err;
+                document.getElementById('copy-status').style.color = 'red';
+            }});
+        }}
+    </script>
+    <button onclick="copyToClipboard()" style="
+        background: linear-gradient(90deg, #4f9d9d, #2b6a6a);
+        border: none;
+        color: white;
+        font-weight: bold;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.3s;
+    ">📋 Copy to Clipboard</button>
+    <p id="copy-status" style="margin-top: 8px; font-weight: bold;"></p>
     """
-    
-    # Generate README content
-    response = model.generate_content(prompt)
-    readme_content = response.text
-    
-    return readme_content
+    return copy_js
 
-# Streamlit app
-st.title("GitHub README Generator ✨")
-
-# Input field for GitHub repository URL
-repo_url = st.text_input("Enter GitHub Repository URL:", "")
-
-# Add a search button to trigger README generation
-if st.button("Search and Generate README"):
+# Button to generate the README
+if st.sidebar.button("Generate README"):
     if repo_url:
+        st.sidebar.write("Generating README... ✨")
+        
+        # Dummy prompt for Google Gemini API request based on GitHub URL
+        prompt = f"Generate a README for the GitHub repository located at {repo_url}. Include installation instructions, usage, and a description."
+        
+        # Fetch README content using Google Gemini
         try:
-            readme_content = generate_readme(repo_url)
-
-            # Two-column layout for generated README and preview
-            col1, col2 = st.columns(2)
-
-            with col1:
-                st.subheader("Generated README Text ✍️")
-                st.text_area("Generated README", value=readme_content, height=400)
-                st.download_button("Download README.md", readme_content, file_name="README.md")
-
-            with col2:
-                st.subheader("README Preview 👀")
-                st.markdown(readme_content)
-                
+            model = genai.GenerativeModel("gemini-1.5-flash")
+            response = model.generate_content(prompt)
+            readme_content = response.text
         except Exception as e:
-            st.error(f"Error fetching repository data: {e}")
+            readme_content = "Error generating README: " + str(e)
+        
+        # Store the generated README content
+        st.session_state['readme_content'] = readme_content
     else:
-        st.warning("Please enter a valid GitHub repository URL")
+        st.sidebar.error("Please enter a valid GitHub repository URL.")
 
-# Apply padding between the two columns
-st.markdown(
-    """
-    <style>
-    div[data-testid="stHorizontalBlock"] > div {
-        padding: 0 10px;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+# Two-column layout: Generated README and Preview
+if 'readme_content' in st.session_state:
+    col1, col2 = st.columns(2)
+
+    # Column 1: Generated README text
+    with col1:
+        st.subheader("Generated README Content 📝")
+        st.text_area("Generated README", value=st.session_state['readme_content'], height=500)
+
+        # Buttons below the generated README
+        col1_1, col1_2 = st.columns(2)
+
+        # Copy to Clipboard button (using JS)
+        with col1_1:
+            copy_js = add_copy_to_clipboard_js(st.session_state['readme_content'])
+            st.markdown(copy_js, unsafe_allow_html=True)
+
+        # Download README.md button
+        with col1_2:
+            readme_filename = "README.md"
+            st.download_button(
+                label="💾 Download README.md",
+                data=st.session_state['readme_content'],
+                file_name=readme_filename,
+                mime="text/markdown",
+                help="Click to download the README.md file."
+            )
+
+    # Column 2: README Preview
+    with col2:
+        st.subheader("README Preview 📄")
+        st.markdown(st.session_state['readme_content'])
+
+# Instructions for users
+st.sidebar.markdown("### Instructions 📝")
+st.sidebar.markdown("""
+1. Enter the GitHub repository URL.
+2. Click 'Generate README' to fetch the content.
+3. Review the generated README in the preview.
+4. Use the buttons below the generated README to copy or download it.
+""")
