@@ -1,4 +1,5 @@
-![image](https://github.com/user-attachments/assets/e3c730e1-ff5f-454d-96cd-be0d83059355)
+![Screenshot 2024-09-15 122631](https://github.com/user-attachments/assets/6c62ad53-b6e8-4480-ba26-f0259293a695)
+
 
 # AI-Readme-generator 🎨
 
